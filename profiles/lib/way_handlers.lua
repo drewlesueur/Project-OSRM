@@ -610,6 +610,19 @@ function WayHandlers.avoid_ways(profile,way,result,data)
   end
 end
 
+
+-- Helper function for debugging what is available in a way
+function inspect(thing)
+  -- for key,value in pairs(thing) do
+  --   print("found member " .. key);
+  -- end
+  
+  for key,value in pairs(getmetatable(thing)) do
+    print("thing: ", key, value)
+  end
+  print("id: ", thing:id())
+end
+
 -- handle various that can block access
 function WayHandlers.blocked_ways(profile,way,result,data)
 
@@ -628,6 +641,14 @@ function WayHandlers.blocked_ways(profile,way,result,data)
     return false
   end
 
+  -- if data.highway == "construction" and way:get_value_by_key('construction') then
+  --         print("construction: https://www.openstreetmap.org/way/" .. way:id())
+  -- end
+
+  -- if data.highway == "proposed" and way:get_value_by_key('proposed') then
+  --         print("proposed: https://www.openstreetmap.org/way/" .. way:id())
+  -- end
+
   -- construction
   -- TODO if highway is valid then we shouldn't check railway, and vica versa
   if profile.avoid.construction and (data.highway == 'construction' or way:get_value_by_key('railway') == 'construction') then
@@ -637,7 +658,10 @@ function WayHandlers.blocked_ways(profile,way,result,data)
   -- In addition to the highway=construction tag above handle the construction=* tag
   -- http://wiki.openstreetmap.org/wiki/Key:construction
   -- https://taginfo.openstreetmap.org/keys/construction#values
-  if profile.avoid.construction then
+  -- The construction=* tags should be used in conjunction with highway=construction so I changed the logic so that
+  -- we only filter out construction=* tags if highway=construction first.  https://wiki.openstreetmap.org/wiki/Tag:highway%3Dconstruction
+  -- if profile.avoid.construction then
+  if profile.avoid.construction and data.highway == "construction"  then
     local construction = way:get_value_by_key('construction')
 
     -- Of course there are negative tags to handle, too
@@ -649,7 +673,11 @@ function WayHandlers.blocked_ways(profile,way,result,data)
   -- Not only are there multiple construction tags there is also a proposed=* tag.
   -- http://wiki.openstreetmap.org/wiki/Key:proposed
   -- https://taginfo.openstreetmap.org/keys/proposed#values
-  if profile.avoid.proposed and way:get_value_by_key('proposed') then
+  -- https://wiki.openstreetmap.org/wiki/Tag:highway%3Dproposed
+  -- The proposed=* tags should be used in conjunction with highway=proposed so I changed the logic so that
+  -- we only filter out proposed=* tags if highway=proposed first.  https://wiki.openstreetmap.org/wiki/Tag:highway%3Dconstruction
+  -- if profile.avoid.proposed and way:get_value_by_key('proposed') then
+  if profile.avoid.proposed and data.highway == "proposed" and way:get_value_by_key('proposed') then
     return false
   end
 
